@@ -189,6 +189,7 @@ function topatient(pid, pubpid, pname, enc, datestr, dobstr) {
 EncounterDateArray=new Array;
 CalendarCategoryArray=new Array;
 EncounterIdArray=new Array;
+EncounterBilledArray=new Array;
 function SubmitTheScreen()
  {//Action on Update List link
   if(!ProcessBeforeSubmitting())
