@@ -11,6 +11,7 @@ require_once("$srcdir/encounter.inc");
 require_once("$srcdir/acl.inc");
 require_once("$srcdir/formatting.inc.php");
 require_once("$srcdir/formdata.inc.php");
+require_once("$srcdir/billing.inc");
 
 $conn = $GLOBALS['adodb']['db'];
 

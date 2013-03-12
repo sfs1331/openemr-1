@@ -758,7 +758,7 @@ if(is_array($ret))
             EncounterDateArray[<?php echo attr($iter['enc_pid']); ?>]=new Array;
             CalendarCategoryArray[<?php echo attr($iter['enc_pid']); ?>]=new Array;
             EncounterIdArray[<?php echo attr($iter['enc_pid']); ?>]=new Array;
-            EncounterBilledArray[<?php echo $iter['enc_pid']; ?>]=new Array;
+            EncounterBilledArray[<?php echo attr($iter['enc_pid']); ?>]=new Array;
             <?php
             while($rowresult4 = sqlFetchArray($result4))
              {
@@ -766,7 +766,7 @@ if(is_array($ret))
                 EncounterIdArray[<?php echo attr($iter['enc_pid']); ?>][Count]='<?php echo htmlspecialchars($rowresult4['encounter'], ENT_QUOTES); ?>';
                 EncounterDateArray[<?php echo attr($iter['enc_pid']); ?>][Count]='<?php echo htmlspecialchars(oeFormatShortDate(date("Y-m-d", strtotime($rowresult4['date']))), ENT_QUOTES); ?>';
                 CalendarCategoryArray[<?php echo attr($iter['enc_pid']); ?>][Count]='<?php echo htmlspecialchars( xl_appt_category($rowresult4['pc_catname']), ENT_QUOTES); ?>';
-                EncounterBilledArray[<?php echo $iter['enc_pid']; ?>][Count]=<?php echo isEncounterBilled($pid,$rowresult4['encounter'])?"true":"false"; ?>;
+                EncounterBilledArray[<?php echo attr($iter['enc_pid']); ?>][Count]=<?php echo isEncounterBilled($pid,$rowresult4['encounter'])?"true":"false"; ?>;
                 Count++;
          <?php
              }
