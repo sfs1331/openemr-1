@@ -20,6 +20,7 @@ require_once(dirname(__FILE__) . "/../../library/classes/X12Partner.class.php");
 require_once("$srcdir/formatting.inc.php");
 require_once("$srcdir/options.inc.php");
 require_once("adjustment_reason_codes.php");
+require_once("$srcdir/billing.inc");
 
 $EXPORT_INC = "$webserver_root/custom/BillingExport.php";
 
@@ -757,6 +758,7 @@ if(is_array($ret))
             EncounterDateArray[<?php echo attr($iter['enc_pid']); ?>]=new Array;
             CalendarCategoryArray[<?php echo attr($iter['enc_pid']); ?>]=new Array;
             EncounterIdArray[<?php echo attr($iter['enc_pid']); ?>]=new Array;
+            EncounterBilledArray[<?php echo $iter['enc_pid']; ?>]=new Array;
             <?php
             while($rowresult4 = sqlFetchArray($result4))
              {
@@ -764,6 +766,7 @@ if(is_array($ret))
                 EncounterIdArray[<?php echo attr($iter['enc_pid']); ?>][Count]='<?php echo htmlspecialchars($rowresult4['encounter'], ENT_QUOTES); ?>';
                 EncounterDateArray[<?php echo attr($iter['enc_pid']); ?>][Count]='<?php echo htmlspecialchars(oeFormatShortDate(date("Y-m-d", strtotime($rowresult4['date']))), ENT_QUOTES); ?>';
                 CalendarCategoryArray[<?php echo attr($iter['enc_pid']); ?>][Count]='<?php echo htmlspecialchars( xl_appt_category($rowresult4['pc_catname']), ENT_QUOTES); ?>';
+                EncounterBilledArray[<?php echo $iter['enc_pid']; ?>][Count]=<?php echo isEncounterBilled($pid,$rowresult4['encounter'])?"true":"false"; ?>;
                 Count++;
          <?php
              }
@@ -779,7 +782,7 @@ if(is_array($ret))
         ",'" . oeFormatShortDate($raw_encounter_date) . "',' " . 
         xl('DOB') . ": " . oeFormatShortDate($name['DOB_YMD']) . " " . xl('Age') . ": " . getPatientAge($name['DOB_YMD']) . "');
                  top.window.parent.left_nav.setPatientEncounter(EncounterIdArray[" . $iter['enc_pid'] . "],EncounterDateArray[" . $iter['enc_pid'] . 
-                 "], CalendarCategoryArray[" . $iter['enc_pid'] . "])\">[" .
+                 "], CalendarCategoryArray[" . $iter['enc_pid'] . "], EncounterBilledArray[".$iter['enc_pid']."])\">[" .
         xlt('To Enctr') . " " . text(oeFormatShortDate($raw_encounter_date)) . "]</a>";
         
             //  Changed "To xxx" buttons to allow room for encounter date display 2/17/09  JCH
@@ -790,7 +793,7 @@ if(is_array($ret))
         ",'" . oeFormatShortDate($raw_encounter_date) . "',' " . 
         xl('DOB') . ": " . oeFormatShortDate($name['DOB_YMD']) . " " . xl('Age') . ": " . getPatientAge($name['DOB_YMD']) . "');
                  top.window.parent.left_nav.setPatientEncounter(EncounterIdArray[" . $iter['enc_pid'] . "],EncounterDateArray[" . $iter['enc_pid'] . 
-                 "], CalendarCategoryArray[" . $iter['enc_pid'] . "])\">[" . xlt('To Dems') . "]</a>";
+                 "], CalendarCategoryArray[" . $iter['enc_pid'] . "], EncounterBilledArray[".$iter['enc_pid']."])\">[" . xl('To Dems') . "]</a>";
         $divnos=$divnos+1;
       $lhtml .= "&nbsp;&nbsp;&nbsp;<a  onclick='divtoggle(\"spanid_$divnos\",\"divid_$divnos\");' class='small' id='aid_$divnos' href=\"JavaScript:void(0);".
         "\">(<span id=spanid_$divnos class=\"indicator\">" . htmlspecialchars( xl('Expand'), ENT_QUOTES) . "</span>)</a>";

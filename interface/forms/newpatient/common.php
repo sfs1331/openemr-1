@@ -56,6 +56,20 @@ $ires = sqlStatement("SELECT id, type, title, begdate FROM lists WHERE " .
 <?php include_once("{$GLOBALS['srcdir']}/dynarch_calendar_en.inc.php"); ?>
 <script type="text/javascript" src="<?php echo $GLOBALS['webroot'] ?>/library/dynarch_calendar_setup.js"></script>
 <?php include_once("{$GLOBALS['srcdir']}/ajax/facility_ajax_jav.inc.php"); ?>
+<script type='text/javascript' charset='utf-8'>
+jQuery(document).ready(function(){
+  jQuery('select[name^="issues"] option').click(function(){
+    var id = jQuery(this).val();
+    jQuery.getJSON("issue_from_id.php",{id:id},function(data){
+      //we only want to append a space if there is already text in the textbox
+      if (data["Error"] === undefined)
+        jQuery('textarea[name="reason"]').text(jQuery('textarea[name="reason"]').text()+(jQuery('textarea[name="reason"]').text()==""?"":" ")+data['title']);
+    });
+  });
+});
+</script>
+
+
 <script language="JavaScript">
 
  var mypcc = '<?php echo $GLOBALS['phone_country_code'] ?>';
@@ -184,13 +198,38 @@ function cancelClicked() {
       <select name='pc_catid' id='pc_catid'>
 	<option value='_blank'>-- Select One --</option>
 <?php
+/*
+  If we're viewing a previous record, we automatically select the option
+  chosen for that record
+  If we're creating a new record, we want to select an option automatically
+  depending on the patient's previous visit. If they are a new patient or have
+  not visited in more than 6 months, set the visit category to "New Patient".
+  Otherwise, set to "Established Patient"
+  
+  established patient id=9, new patient id = 10
+*/
+  $recent_encounters = sqlStatement("select id from form_encounter where pid=$pid and DATEDIFF(CURDATE(),date) < 183");
+  $isEstablishedPatient = (sqlNumRows($recent_encounters) > 0);
+
  $cres = sqlStatement("SELECT pc_catid, pc_catname " .
   "FROM openemr_postcalendar_categories ORDER BY pc_catname");
  while ($crow = sqlFetchArray($cres)) {
   $catid = $crow['pc_catid'];
   if ($catid < 9 && $catid != 5) continue;
   echo "       <option value='$catid'";
-  if ($viewmode && $crow['pc_catid'] == $result['pc_catid']) echo " selected";
+  if ($viewmode && $crow['pc_catid'] == $result['pc_catid'])
+  {
+    echo " selected";
+  }
+  else if (!$viewmode && $isEstablishedPatient && $crow['pc_catid'] == 9)
+  {
+    echo " selected";
+  }
+  else if(!$viewmode && !$isEstablishedPatient && $crow['pc_catid'] == 10)
+  {
+    echo " selected";
+  }
+    
   echo ">" . xl_appt_category($crow['pc_catname']) . "</option>\n";
  }
 ?>
@@ -337,8 +376,29 @@ if ($fres) {
 
  <tr>
   <td class='text' valign='top'>
-   <textarea name='reason' cols='40' rows='12' wrap='virtual' style='width:96%'
-    ><?php echo $viewmode ? htmlspecialchars($result['reason']) : $GLOBALS['default_chief_complaint']; ?></textarea>
+   <textarea name='reason' cols='40' rows='12' wrap='virtual' style='width:96%'><?php
+      if ($viewmode)
+      {
+        echo htmlspecialchars($result['reason']);
+      }
+      else if ($GLOBALS['default_chief_complaint'] != '')
+      {
+        echo $GLOBALS['default_chief_complaint'];
+      }
+      // if there's no default chief complaint text, use the current patient's medical problem list
+      /*
+      else
+      {
+        $issues = array();
+        $medical_issues = sqlStatement("select title from lists where pid=$pid");
+        while ( $issue_row = sqlFetchArray($medical_issues) )
+        {
+          $issues[] = $issue_row['title'];
+        }
+        echo implode(', ', $issues);
+      }
+      */
+    ?></textarea>
   </td>
   <td class='text' valign='top'>
    <select multiple name='issues[]' size='8' style='width:100%'

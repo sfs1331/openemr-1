@@ -138,6 +138,7 @@ $result4 = sqlStatement("SELECT fe.encounter,fe.date,openemr_postcalendar_catego
 	EncounterDateArray=new Array;
 	CalendarCategoryArray=new Array;
 	EncounterIdArray=new Array;
+  EncounterBilledArray=new Array;
 	Count=0;
 	 <?php
 			   if(sqlNumRows($result4)>0)
@@ -147,11 +148,12 @@ $result4 = sqlStatement("SELECT fe.encounter,fe.date,openemr_postcalendar_catego
 					EncounterIdArray[Count]='<?php echo htmlspecialchars($rowresult4['encounter'], ENT_QUOTES); ?>';
 					EncounterDateArray[Count]='<?php echo htmlspecialchars(oeFormatShortDate(date("Y-m-d", strtotime($rowresult4['date']))), ENT_QUOTES); ?>';
 					CalendarCategoryArray[Count]='<?php echo htmlspecialchars( xl_appt_category($rowresult4['pc_catname']), ENT_QUOTES); ?>';
+          EncounterBilledArray[Count]=<?php echo isEncounterBilled($pid,$rowresult4['encounter'])?"true":"false"; ?>;
 					Count++;
 	 <?php
 				 }
 	 ?>
-	 top.window.parent.left_nav.setPatientEncounter(EncounterIdArray,EncounterDateArray,CalendarCategoryArray);
+	 top.window.parent.left_nav.setPatientEncounter(EncounterIdArray,EncounterDateArray,CalendarCategoryArray, EncounterBilledArray);
 <?php } ?>
  top.restoreSession();
 <?php if ($GLOBALS['concurrent_layout']) { ?>

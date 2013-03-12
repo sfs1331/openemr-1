@@ -181,6 +181,8 @@ if (!empty($reg)) {
     "')\" href='JavaScript:void(0);'>" . xl_form_title($nickname) . "</a></td></tr>";
   }
   $StringEcho.= '</table></div></li>';
+  $StringEcho .= "<li><a onclick=\"openNewForm('/openemr/interface/patient_file/encounter/load_form.php?formname=fee_sheet')\" href=\"JavaScript:void(0);\">Fee Sheet</a></li>";
+  $StringEcho .= "<li><a onclick=\"openNewForm('/openemr/interface/patient_file/encounter/load_form.php?formname=soap')\" href=\"JavaScript:void(0);\">SOAP</a></li>";
 }
 if($StringEcho){
   $StringEcho2= '<div style="clear:both"></div>';

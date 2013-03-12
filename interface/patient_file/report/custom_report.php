@@ -445,6 +445,7 @@ if ($printable) {
   }
 ?>
 <h2><?php echo $facility['name'] ?></h2>
+<div><strong><?php echo get_most_recent_provider_name($pid); ?></strong></div>
 <?php echo $facility['street'] ?><br>
 <?php echo $facility['city'] ?>, <?php echo $facility['state'] ?> <?php echo $facility['postal_code'] ?><br clear='all'>
 <?php echo $facility['phone'] ?><br>

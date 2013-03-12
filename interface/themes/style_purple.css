@@ -1068,4 +1068,6 @@ height: 300px !important;
 .report_search_bar{
 	background-color:#C9DCFF;
 }
-
+.billed {
+  background: #DDDDDD;
+}
