@@ -4,6 +4,7 @@
  */
 
 include_once('../globals.php');
+include_once('../../library/patient.inc');
 ?>
 <html>
 <head>
@@ -17,7 +18,6 @@ include_once('../globals.php');
         display:block;
       }
 </style>
-
 <script type="text/javascript" language="javascript">
 function toencounter(rawdata) {
 //This is called in the on change event of the Encounter list.
@@ -65,6 +65,10 @@ function showhideMenu() {
 		document.getElementById("showMenuLink").innerHTML = '<?php echo htmlspecialchars( xl('Show Menu'), ENT_QUOTES); ?>';
 	}
 }
+function openPatient(pid) {
+	document.fnew.patientID.value = pid;
+	document.fnew.submit();
+}
 </script>
 </head>
 <body class="body_title">
@@ -102,6 +106,14 @@ $res = sqlQuery("select * from users where username='".$_SESSION{"authUser"}."'"
             <span class='text'><?php xl('Patient','e'); ?>:&nbsp;</span><span class='title_bar_top' id="current_patient"><b><?php xl('None','e'); ?></b></span>
         </div>
 </td>
+<td>
+	<select id="recent_patients">
+		<option>Recent Patients</option>
+		<?php foreach (recent_patients(15) as $p): ?>
+			<option id='<?php echo $p['id']?>' onclick='openPatient(<?php echo $p['id']?>)'><?php echo "{$p['fname']} {$p['lname']}" ?></option>
+		<?php endforeach ?>
+	</select>
+</td>
 <td style="margin:3px 0px 3px 0px;vertical-align:middle;" align="left">
 	<table cellspacing="0" cellpadding="1" ><tr><td>
 		<div style='margin-left:5px; float:left; display:none' id="past_encounter_block">
@@ -132,6 +144,15 @@ $res = sqlQuery("select * from users where username='".$_SESSION{"authUser"}."'"
 <script type="text/javascript" language="javascript">
 parent.loadedFrameCount += 1;
 </script>
+
+<!-- form used to open a new top level window when a patient row is clicked -->
+<form name='fnew' method='post' target='_top' action='../main/main_screen.php?auth=login&site=<?php echo attr($_SESSION['site_id']); ?>'>
+<input type='hidden' name='authUser'       value='<?php echo attr($_SESSION['authUser']);        ?>' />
+<input type='hidden' name='authPass'       value='<?php echo attr($_SESSION['authPass']);        ?>' />
+<input type='hidden' name='authProvider'   value='<?php echo attr($_SESSION['authProvider']);    ?>' />
+<input type='hidden' name='languageChoice' value='<?php echo attr($_SESSION['language_choice']); ?>' />
+<input type='hidden' name='patientID'      value='0' />
+</form>
 
 </body>
 </html>

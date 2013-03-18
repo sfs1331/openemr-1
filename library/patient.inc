@@ -1737,5 +1737,22 @@ function get_most_recent_provider_name($pid)
   return empty($result)?"":$name;
 }
 
+/*
+  get the most recent patients up to today by visit date
 
+  num_patients: the number of patients to return
+  returns: array of patients in descending order of visit
+*/
+function recent_patients($num_patients)
+{
+  $num_patients = intval($num_patients);
+  if ($num_patients == 0) $num_patients = 15;
+
+  $result = mysql_query("select pd.id, pd.fname, pd.lname from openemr_postcalendar_events pc inner join patient_data pd on pc.pc_pid=pd.id where pc.pc_time < NOW() group by pd.id, pd.fname, pd.lname order by pc.pc_time desc limit $num_patients");
+
+  $patients = [];
+  while ($row = mysql_fetch_array($result)) $patients[] = $row;
+
+  return empty($patients)?[]:$patients;
+}
 ?>
