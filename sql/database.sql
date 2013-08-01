@@ -671,6 +671,8 @@ CREATE TABLE `documents` (
   `couch_docid` VARCHAR(100) DEFAULT NULL,
   `couch_revid` VARCHAR(100) DEFAULT NULL,
   `storagemethod` TINYINT(4) NOT NULL DEFAULT '0' COMMENT '0->Harddisk,1->CouchDB',
+  `path_depth` TINYINT DEFAULT '1' COMMENT 'Depth of path to use in url to find document. Not applicable for CouchDB.',
+  `imported` TINYINT DEFAULT 0 NULL COMMENT 'Parsing status for CCR/CCD/CCDA importing',
   PRIMARY KEY  (`id`),
   KEY `revision` (`revision`),
   KEY `foreign_id` (`foreign_id`),
@@ -2222,7 +2224,7 @@ DROP TABLE IF EXISTS `immunizations`;
 CREATE TABLE `immunizations` (
   `id` bigint(20) NOT NULL auto_increment,
   `patient_id` int(11) default NULL,
-  `administered_date` date default NULL,
+  `administered_date` datetime default NULL,
   `immunization_id` int(11) default NULL,
   `cvx_code` int(11) default NULL,
   `manufacturer` varchar(100) default NULL,
@@ -2236,6 +2238,12 @@ CREATE TABLE `immunizations` (
   `update_date` timestamp NOT NULL,
   `created_by` bigint(20) default NULL,
   `updated_by` bigint(20) default NULL,
+  `amount_administered` int(11) DEFAULT NULL,			
+  `amount_administered_unit` varchar(50) DEFAULT NULL,			
+  `expiration_date` date DEFAULT NULL,			
+  `route` varchar(100) DEFAULT NULL,			
+  `administration_site` varchar(100) DEFAULT NULL,			
+  `added_erroneously` tinyint(1) NOT NULL DEFAULT '0',  
   PRIMARY KEY  (`id`),
   KEY `patient_id` (`patient_id`)
 ) ENGINE=MyISAM AUTO_INCREMENT=1 ;
@@ -4011,6 +4019,7 @@ CREATE TABLE `patient_access_onsite`(
   `portal_username` VARCHAR(100) ,
   `portal_pwd` VARCHAR(100) ,
   `portal_pwd_status` TINYINT DEFAULT '1' COMMENT '0=>Password Created Through Demographics by The provider or staff. Patient Should Change it at first time it.1=>Pwd updated or created by patient itself',
+  `portal_salt` VARCHAR(100) ,
   PRIMARY KEY (`id`)
 )ENGINE=MyISAM AUTO_INCREMENT=1;
 
@@ -5258,6 +5267,25 @@ CREATE TABLE `users` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `user_secure`
+--
+CREATE TABLE `users_secure` (
+  `id` bigint(20) NOT NULL,
+  `username` varchar(255) DEFAULT NULL,
+  `password` varchar(255),
+  `salt` varchar(255),
+  `last_update` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `password_history1` varchar(255),
+  `salt_history1` varchar(255),
+  `password_history2` varchar(255),
+  `salt_history2` varchar(255),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `USERNAME_ID` (`id`,`username`)
+) ENGINE=InnoDb;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `user_settings`
 --
 
@@ -5550,6 +5578,7 @@ CREATE TABLE `procedure_order` (
   `specimen_location`      varchar(31)  NOT NULL DEFAULT '' COMMENT 'from the Specimen_Location list',
   `specimen_volume`        varchar(30)  NOT NULL DEFAULT '' COMMENT 'from a text input field',
   `date_transmitted`       datetime     DEFAULT NULL        COMMENT 'time of order transmission, null if unsent',
+  `clinical_hx`            varchar(255) NOT NULL DEFAULT '' COMMENT 'clinical history text that may be relevant to the order',
   PRIMARY KEY (`procedure_order_id`),
   KEY datepid (date_ordered, patient_id),
   KEY `patient_id` (`patient_id`)
@@ -5562,6 +5591,7 @@ CREATE TABLE `procedure_order_code` (
   `procedure_name`      varchar(255) NOT NULL DEFAULT ''    COMMENT 'descriptive name of the procedure code',
   `procedure_source`    char(1)     NOT NULL DEFAULT '1'    COMMENT '1=original order, 2=added after order sent',
   `diagnoses`           text        NOT NULL DEFAULT ''     COMMENT 'diagnoses and maybe other coding (e.g. ICD9:111.11)',
+  `do_not_send`         tinyint(1)  NOT NULL DEFAULT '0'    COMMENT '0 = normal, 1 = do not transmit to lab',
   PRIMARY KEY (`procedure_order_id`, `procedure_order_seq`)
 ) ENGINE=MyISAM;
 
@@ -5756,5 +5786,24 @@ CREATE TABLE `product_warehouse` (
   `pw_max_level` float       DEFAULT 0,
   PRIMARY KEY  (`pw_drug_id`,`pw_warehouse`)
 ) ENGINE=MyISAM;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `misc_address_book`
+--
+
+CREATE TABLE `misc_address_book` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `fname` varchar(255) DEFAULT NULL,
+  `mname` varchar(255) DEFAULT NULL,
+  `lname` varchar(255) DEFAULT NULL,
+  `street` varchar(60) DEFAULT NULL,
+  `city` varchar(30) DEFAULT NULL,
+  `state` varchar(30) DEFAULT NULL,
+  `zip` varchar(20) DEFAULT NULL,
+  `phone` varchar(30) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB;
 
 -- --------------------------------------------------------

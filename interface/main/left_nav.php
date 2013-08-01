@@ -758,6 +758,7 @@ function clearactive() {
  }
 
 function loadCurrentPatientFromTitle() {
+    top.restoreSession();
     top.frames['RTop'].location='../patient_file/summary/demographics.php';
 }
 
@@ -803,6 +804,7 @@ function getEncounterTargetFrame( name ) {
  }
 
  function loadCurrentEncounterFromTitle() {
+      top.restoreSession();
       top.frames[ parent.left_nav.getEncounterTargetFrame('enc') ].location='../patient_file/encounter/encounter_top.php';
  }
 
@@ -1188,6 +1190,12 @@ if (!empty($reg)) {
   }
 }
 ?>
+        </ul>
+      </li>
+      <li class="collapsed" ><a class="collapsed_lv2"><span><?php echo xlt('Import') ?></span></a>
+        <ul>
+          <?php genMiscLink('RTop','ccr','0',xlt('Upload'),'patient_file/ccr_import.php'); ?>
+          <?php genMiscLink('RTop','apr','0',xlt('Pending Approval'),'patient_file/ccr_pending_approval.php'); ?>
         </ul>
       </li>
 <?php } // end if gbl_nav_visit_forms ?>

@@ -1519,19 +1519,25 @@ function exist_database_item($patient_id,$table,$column='',$data_comp,$data='',$
   // get the appropriate sql comparison operator
   $compSql = convertCompSql($data_comp);
 
+  // custom issues per table can be placed here
+  $customSQL = '';
+  if ($table == 'immunizations') {
+    $customSQL = " AND `added_erroneously` = '0' ";
+  }
+
   // check for items
   if (empty($column)) {
     // simple search for any table entries
     $sql = sqlStatementCdrEngine("SELECT * " .
       "FROM `" . add_escape_custom($table)  . "` " .
-      "WHERE `" . add_escape_custom($patient_id_label)  . "`=?", array($patient_id) );
+      "WHERE `" . add_escape_custom($patient_id_label)  . "`=? " . $customSQL, array($patient_id) );
   }
   else {
     // search for number of specific items
     $sql = sqlStatementCdrEngine("SELECT `" . add_escape_custom($column) . "` " .
       "FROM `" . add_escape_custom($table)  . "` " .
       "WHERE `" . add_escape_custom($column) ."`" . $compSql . "? " .
-      "AND `" . add_escape_custom($patient_id_label)  . "`=? " .
+      "AND `" . add_escape_custom($patient_id_label)  . "`=? " . $customSQL .
       $dateSql, array($data,$patient_id) );
   }
 
@@ -1602,7 +1608,7 @@ function exist_procedure_item($patient_id,$proc_title,$proc_code,$result_comp,$r
                "WHERE " .
                "procedure_order_code.procedure_code = procedure_type.procedure_code AND " .
                "procedure_order.procedure_order_id = procedure_order_code.procedure_order_id AND " .
-               "procedure_order.lab_id procedure_type.lab_id AND " .
+               "procedure_order.lab_id = procedure_type.lab_id AND " .
                "procedure_report.procedure_order_id = procedure_order.procedure_order_id AND " .
                "procedure_report.procedure_order_seq = procedure_order_code.procedure_order_seq AND " .
                "procedure_result.procedure_report_id = procedure_report.procedure_report_id AND " .

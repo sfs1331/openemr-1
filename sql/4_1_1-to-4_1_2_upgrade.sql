@@ -406,3 +406,93 @@ INSERT INTO issue_types(`ordering`,`category`,`type`,`plural`,`singular`,`abbrev
 ALTER TABLE `issue_types` ADD COLUMN `active` tinyint(1) NOT NULL DEFAULT '1';
 #EndIf
 
+#IfNotColumnType immunizations administered_date datetime
+ALTER TABLE `immunizations`
+  MODIFY COLUMN administered_date datetime DEFAULT NULL;
+#EndIf
+
+#IfMissingColumn immunizations amount_administered
+ALTER TABLE `immunizations`
+  ADD COLUMN `amount_administered` int(11) DEFAULT NULL;
+#EndIf
+
+#IfMissingColumn immunizations amount_administered_unit
+ALTER TABLE `immunizations`
+  ADD COLUMN `amount_administered_unit` varchar(50) DEFAULT NULL;
+#EndIf
+
+#IfMissingColumn immunizations expiration_date
+ALTER TABLE `immunizations`
+  ADD COLUMN `expiration_date` date DEFAULT NULL;
+#EndIf
+
+#IfMissingColumn immunizations route
+ALTER TABLE `immunizations`
+  ADD COLUMN `route` varchar(100) DEFAULT NULL;
+#EndIf
+
+#IfMissingColumn immunizations administration_site
+ALTER TABLE `immunizations`
+  ADD COLUMN `administration_site` varchar(100) DEFAULT NULL;
+#EndIf
+
+#IfMissingColumn immunizations added_erroneously
+ALTER TABLE `immunizations`
+  ADD COLUMN `added_erroneously` tinyint(1) NOT NULL DEFAULT '0';
+#EndIf
+
+#IfMissingColumn documents path_depth
+ALTER TABLE `documents` ADD COLUMN `path_depth` TINYINT DEFAULT '1' COMMENT 'Depth of path to use in url to find document. Not applicable for CouchDB.';
+#Endif
+
+#IfNotTable users_secure
+CREATE TABLE `users_secure` (
+  `id` bigint(20) NOT NULL,
+  `username` varchar(255) DEFAULT NULL,
+  `password` varchar(255),
+  `salt` varchar(255),
+  `last_update` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `password_history1` varchar(255),
+  `salt_history1` varchar(255),
+  `password_history2` varchar(255),
+  `salt_history2` varchar(255),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `USERNAME_ID` (`id`,`username`)
+) ENGINE=InnoDb; 
+#EndIf
+
+#IfMissingColumn patient_access_onsite portal_salt
+ALTER TABLE `patient_access_onsite` ADD COLUMN `portal_salt` VARCHAR(100) NULL;
+#Endif
+
+#IfMissingColumn procedure_order clinical_hx
+ALTER TABLE `procedure_order`
+  ADD COLUMN `clinical_hx` varchar(255) DEFAULT '' COMMENT
+  'clinical history text that may be relevant to the order';
+#EndIf
+
+#IfMissingColumn procedure_order_code do_not_send
+ALTER TABLE `procedure_order_code`
+  ADD COLUMN `do_not_send` tinyint(1) NOT NULL DEFAULT '0' COMMENT '0 = normal, 1 = do not transmit to lab';
+#EndIf
+
+#IfNotTable misc_address_book
+CREATE TABLE `misc_address_book` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `fname` varchar(255) DEFAULT NULL,
+  `mname` varchar(255) DEFAULT NULL,
+  `lname` varchar(255) DEFAULT NULL,
+  `street` varchar(60) DEFAULT NULL,
+  `city` varchar(30) DEFAULT NULL,
+  `state` varchar(30) DEFAULT NULL,
+  `zip` varchar(20) DEFAULT NULL,
+  `phone` varchar(30) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB;
+#EndIf
+
+#IfMissingColumn documents imported
+ALTER TABLE `documents` ADD COLUMN `imported` TINYINT DEFAULT 0 NULL COMMENT 'Parsing status for CCR/CCD/CCDA importing';
+#EndIf
+
+

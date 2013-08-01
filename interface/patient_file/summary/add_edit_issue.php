@@ -296,7 +296,7 @@ div.section {
   echo " aopts[$i] = new Array();\n";
   $qry = sqlStatement("SELECT * FROM list_options WHERE list_id = ?",array($key."_issue_list"));
   while($res = sqlFetchArray($qry)){
-    echo " aopts[$i][aopts[$i].length] = new Option('".attr($res['option_id'])."', '".attr(xl_list_label($res['title']))."', false, false);\n";
+    echo " aopts[$i][aopts[$i].length] = new Option('".attr(trim($res['option_id']))."', '".attr(xl_list_label(trim($res['title'])))."', false, false);\n";
   }
   ++$i;
  }
@@ -410,7 +410,7 @@ div.section {
   if (cb.value == '1'){
    var today = new Date();
    f.form_end.value = '' + (today.getYear() + 1900) + '-' +
-    (today.getMonth() + 1) + '-' + today.getDate();
+    ("0" + (today.getMonth() + 1)).slice(-2) + '-' + ("0" + today.getDate()).slice(-2);
    f.form_end.focus();
   }
  }
@@ -451,6 +451,10 @@ function sel_diagnosis() {
 // Check for errors when the form is submitted.
 function validate() {
  var f = document.forms[0];
+ if(f.form_begin.value > f.form_end.value && (f.form_end.value)) {
+  alert("<?php echo addslashes(xl('Please Enter End Date greater than Begin Date!')); ?>");
+  return false;
+ }
  if (! f.form_title.value) {
   alert("<?php echo addslashes(xl('Please enter a title!')); ?>");
   return false;

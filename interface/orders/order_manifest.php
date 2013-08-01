@@ -35,7 +35,7 @@ function getListItem($listid, $value) {
     "WHERE list_id = ? AND option_id = ?",
     array($listid, $value));
   $tmp = xl_list_label($lrow['title']);
-  if (empty($tmp)) $tmp = "($report_status)";
+  if (empty($tmp)) $tmp = "($value)";
   return $tmp;
 }
 
@@ -45,10 +45,30 @@ function myCellText($s) {
 }
 
 function generate_order_summary($orderid) {
+
+  // If requested, save checkbox selections as to which procedures are not sendable.
+  if ($_POST['bn_save']) {
+    sqlStatement("UPDATE procedure_order_code " .
+      "SET do_not_send = 0 WHERE " .
+      "procedure_order_id = ? AND " .
+      "do_not_send != 0",
+      array($orderid));
+    if (!empty($_POST['form_omit'])) {
+      foreach ($_POST['form_omit'] as $key) {
+        sqlStatement("UPDATE procedure_order_code " .
+          "SET do_not_send = 1 WHERE " .
+          "procedure_order_id = ? AND " .
+          "do_not_send = 0 AND " .
+          "procedure_order_seq = ?",
+          array($orderid, intval($key)));
+      }
+    }
+  }
+
   $orow = sqlQuery("SELECT " .
     "po.procedure_order_id, po.patient_id, po.date_ordered, po.order_status, " .
-    "po.date_collected, po.specimen_type, po.specimen_location, " .
-    "pd.pubpid, pd.lname, pd.fname, pd.mname, pd.DOB, " .
+    "po.date_collected, po.specimen_type, po.specimen_location, po.lab_id, po.clinical_hx, " .
+    "pd.pubpid, pd.lname, pd.fname, pd.mname, pd.DOB, pd.sex, " .
     "fe.date, " .
     "pp.name AS labname, " .
     "u.lname AS ulname, u.fname AS ufname, u.mname AS umname " .
@@ -60,6 +80,7 @@ function generate_order_summary($orderid) {
     "WHERE po.procedure_order_id = ?",
     array($orderid));
 
+  $lab_id = intval($orow['lab_id']);
   $patient_id = intval($orow['patient_id']);
   $encdate = substr($orow['date'], 0, 10);
 
@@ -106,7 +127,17 @@ function generate_order_summary($orderid) {
  border-color: black;
 }
 
+/* specifically exclude from printing */
+@media print {
+ .unprintable {
+  visibility: hidden;
+  display: none;
+ }
+}
+
 </style>
+
+<form method='post' action='order_manifest.php?orderid=<?php echo $orderid; ?>'>
 
 <div class='ordsum'>
 
@@ -136,28 +167,34 @@ function generate_order_summary($orderid) {
   <td><?php echo myCellText($orow['labname']); ?></td>
  </tr>
  <tr bgcolor='#cccccc'>
-  <td nowrap><?php echo xlt('Ins Name'); ?></td>
-  <td><?php echo myCellText($ins_name); ?></td>
+  <td nowrap><?php echo xlt('Sex'); ?></td>
+  <td><?php echo myCellText(getListItem('sex', $orow['sex'])); ?></td>
   <td nowrap><?php echo xlt('Specimen Type'); ?></td>
   <td><?php echo myCellText($orow['specimen_type']); ?></td>
  </tr>
  <tr bgcolor='#cccccc'>
-  <td nowrap><?php echo xlt('Ins Address'); ?></td>
-  <td><?php echo myCellText("$ins_addr, $ins_city, $ins_state $ins_zip"); ?></td>
+  <td nowrap><?php echo xlt('Ins Name'); ?></td>
+  <td><?php echo myCellText($ins_name); ?></td>
   <td nowrap><?php echo xlt('Collection Date'); ?></td>
   <td><?php echo myCellText(oeFormatShortDate($orow['date_collected'])); ?></td>
  </tr>
  <tr bgcolor='#cccccc'>
+  <td nowrap><?php echo xlt('Ins Address'); ?></td>
+  <td><?php echo myCellText("$ins_addr, $ins_city, $ins_state $ins_zip"); ?></td>
+  <td nowrap><?php echo xlt('Clinical History'); ?></td>
+  <td><?php echo myCellText($orow['clinical_hx']); ?></td>
+ </tr>
+ <tr bgcolor='#cccccc'>
   <td nowrap><?php echo xlt('Ins Policy'); ?></td>
   <td><?php echo myCellText($ins_policy); ?></td>
-  <td nowrap><?php echo xlt('Specimen Location'); ?></td>
-  <td><?php echo myCellText($orow['specimen_location']); ?></td>
+  <td nowrap><?php echo xlt('Order Status'); ?></td>
+  <td><?php echo myCellText(getListItem('ord_status', $orow['order_status'])); ?></td>
  </tr>
  <tr bgcolor='#cccccc'>
   <td nowrap><?php echo xlt('Ins Group'); ?></td>
   <td><?php echo myCellText($ins_group); ?></td>
-  <td nowrap><?php echo xlt('Order Status'); ?></td>
-  <td><?php echo myCellText($orow['order_status']); ?></td>
+  <td>&nbsp;</td>
+  <td>&nbsp;</td>
  </tr>
 </table>
 
@@ -166,16 +203,22 @@ function generate_order_summary($orderid) {
 <table width='100%' cellpadding='2' cellspacing='0'>
 
  <tr class='head'>
+  <td><?php echo xlt('Omit'); ?></td>
   <td><?php echo xlt('Code'); ?></td>
   <td><?php echo xlt('Description'); ?></td>
   <td><?php echo xlt('Diagnoses'); ?></td>
+  <td><?php echo xlt('Notes'); ?></td>
  </tr>
 
 <?php 
   $query = "SELECT " .
-    "procedure_order_seq, procedure_code, procedure_name, diagnoses " .
+    "procedure_order_seq, procedure_code, procedure_name, diagnoses, do_not_send " .
     "FROM procedure_order_code WHERE " .
-    "procedure_order_id =  ? ORDER BY procedure_order_seq";
+    "procedure_order_id =  ? ";
+  if (!empty($_POST['bn_show_sendable'])) {
+    $query .= "AND do_not_send = 0 ";
+  }
+  $query .= "ORDER BY procedure_order_seq";
   $res = sqlStatement($query, array($orderid));
 
   $encount = 0;
@@ -185,18 +228,67 @@ function generate_order_summary($orderid) {
     $procedure_code = empty($row['procedure_code'  ]) ? '' : $row['procedure_code'];
     $procedure_name = empty($row['procedure_name'  ]) ? '' : $row['procedure_name'];
     $diagnoses      = empty($row['diagnoses'       ]) ? '' : $row['diagnoses'];
+
+    // Create a string of HTML representing the procedure answers.
+    // This code cloned from gen_hl7_order.inc.php.
+    // Should maybe refactor it into something like a ProcedureAnswer class.
+    $qres = sqlStatement("SELECT " .
+      "a.question_code, a.answer, q.fldtype, q.question_text " .
+      "FROM procedure_answers AS a " .
+      "LEFT JOIN procedure_questions AS q ON " .
+      "q.lab_id = ? " .
+      "AND q.procedure_code = ? AND " .
+      "q.question_code = a.question_code " .
+      "WHERE " .
+      "a.procedure_order_id = ? AND " .
+      "a.procedure_order_seq = ? " .
+      "ORDER BY q.seq, a.answer_seq",
+      array($lab_id, $procedure_code, $orderid, $order_seq));
+
+    $notes='';
+    while ($qrow = sqlFetchArray($qres)) {
+      // Formatting of these answer values may be lab-specific and we'll figure
+      // out how to deal with that as more labs are supported.
+      $answer = trim($qrow['answer']);
+      $fldtype = $qrow['fldtype'];
+      if ($fldtype == 'G') {
+        $weeks = intval($answer / 7);
+        $days = $answer % 7;
+        $answer = $weeks . 'wks ' . $days . 'days';
+      }
+      if ($notes) $notes .= '<br />';
+      $notes .= text($qrow['question_text'] . ': ' . $answer);
+    }
+    if ($notes === '') $notes = '&nbsp;';
+
     ++$encount;
     $bgcolor = "#" . (($encount & 1) ? "ddddff" : "ffdddd");
     echo " <tr class='detail' bgcolor='$bgcolor'>\n";
+    echo "  <td><input type='checkbox' name='form_omit[$order_seq]' value='1'";
+    if (!empty($row['do_not_send'])) echo " checked";
+    echo " /></td>\n";
     echo "  <td>" . text("$procedure_code") . "</td>\n";
     echo "  <td>" . text("$procedure_name") . "</td>\n";
     echo "  <td>" . text("$diagnoses"     ) . "</td>\n";
+    echo "  <td>$notes</td>\n";
     echo " </tr>\n";
   }
 ?>
 
 </table>
 </div>
+
+<center>
+<p class='unprintable'>
+<input type='submit' name='bn_save' value='<?php echo xla('Save omission selections'); ?>' />
+&nbsp;
+<input type='submit' name='bn_show_all' value='<?php echo xla('Show all procedures'); ?>' />
+&nbsp;
+<input type='submit' name='bn_show_sendable' value='<?php echo xla('Show only procedures not omitted'); ?>' />
+</p>
+</center>
+
+</form>
 
 <?php
 } // end function generate_order_summary

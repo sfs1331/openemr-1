@@ -39,6 +39,7 @@
 //   Hindi                          // xl('Hindi')
 //   Hungarian                      // xl('Hungarian')
 //   Italian                        // xl('Italian')
+//   Lithuanian                     // xl('Lithuanian')
 //   Norwegian                      // xl('Norwegian')
 //   Persian                        // xl('Persian')
 //   Polish                         // xl('Polish')
@@ -454,7 +455,13 @@ $GLOBALS_METADATA = array(
             ),
             '0',
             xl('Format for age display')
-    )
+    ),
+    'age_display_limit' => array(
+      xl('Age in Years for Display Format Change'),
+      'num',
+      '3',
+      xl('If YMD is selected for age display, switch to just Years when patients older than this value in years')
+    ),      
   ),
 
   // Features Tab
@@ -805,7 +812,13 @@ $GLOBALS_METADATA = array(
       '0',                              // default
       xl('Means none of last three passwords are allowed when changing a password.')
     ),
-
+    'password_compatibility' => array(
+      xl('Permit unsalted passwords'),
+      'bool',                           // data type
+      '1',                              // default
+      xl('After migration from the old password mechanisms where passwords are stored in the users table without salt is complete, this flag should be set to false so that only authentication by the new method is possible')
+    ),
+      
     'password_expiration_days' => array(
       xl('Default Password Expiration Days'),
       'num',                            // data type
@@ -1575,6 +1588,20 @@ $GLOBALS_METADATA = array(
       'num',                           // data type
       '5',
       xl('Interval between message checks (set to zero for manual checks only)')
+    ),
+
+    'phimail_ccd_enable' => array(
+      xl('phiMail Allow CCD Send'),
+      'bool',                           // data type
+      '0',
+      xl('phiMail Allow CCD Send')
+    ),
+
+    'phimail_ccr_enable' => array(
+      xl('phiMail Allow CCR Send'),
+      'bool',                           // data type
+      '0',
+      xl('phiMail Allow CCR Send')
     )
 
   ),

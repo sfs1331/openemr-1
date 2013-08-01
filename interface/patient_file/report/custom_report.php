@@ -1,8 +1,23 @@
 <?php
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
+/**
+ *
+ * Patient custom report.
+ *
+ * LICENSE: This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 3
+ * of the License, or (at your option) any later version.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://opensource.org/licenses/gpl-license.php>;.
+ *
+ * @package OpenEMR
+ * @author  Brady Miller <brady@sparmy.com>
+ * @link    http://www.open-emr.org
+ */
 
 require_once("../../globals.php");
 require_once("$srcdir/forms.inc");
@@ -463,30 +478,30 @@ if ($printable) {
 else { // not printable
 ?>
 
-<a href="patient_report.php">
+<a href="patient_report.php" onclick='top.restoreSession()'>
  <span class='title'><?php xl('Patient Report','e'); ?></span>
  <span class='back'><?php echo $tback;?></span>
 </a><br><br>
-<a href="custom_report.php?printable=1&<?php print postToGet($ar); ?>" class='link_submit' target='new'>
+<a href="custom_report.php?printable=1&<?php print postToGet($ar); ?>" class='link_submit' target='new' onclick='top.restoreSession()'>
  [<?php xl('Printable Version','e'); ?>]
 </a><br>
 <div class="report_search_bar" style="width:100%;" id="search_options">
   <table style="width:100%;">
     <tr>
       <td>
-        <input type="text" onkeyup="clear_last_visit();remove_mark_all();find_all();" name="search_element" id="search_element" style="width:180px;"/>
+        <input type="text" onKeyUp="clear_last_visit();remove_mark_all();find_all();" name="search_element" id="search_element" style="width:180px;"/>
       </td>
       <td>
-         <a class="css_button" onclick="clear_last_visit();remove_mark_all();find_all();" ><span><?php echo xlt('Find'); ?></span></a>
+         <a class="css_button" onClick="clear_last_visit();remove_mark_all();find_all();" ><span><?php echo xlt('Find'); ?></span></a>
       </td>
       <td>
-         <a class="css_button" onclick="next_prev('prev');" ><span><?php echo xlt('Prev'); ?></span></a>
+         <a class="css_button" onClick="next_prev('prev');" ><span><?php echo xlt('Prev'); ?></span></a>
       </td>
       <td>
-         <a class="css_button" onclick="next_prev('next');" ><span><?php echo xlt('Next'); ?></span></a>
+         <a class="css_button" onClick="next_prev('next');" ><span><?php echo xlt('Next'); ?></span></a>
       </td>
       <td>
-        <input type="checkbox" onclick="clear_last_visit();remove_mark_all();find_all();" name="search_case" id="search_case" />
+        <input type="checkbox" onClick="clear_last_visit();remove_mark_all();find_all();" name="search_case" id="search_case" />
       </td>
       <td>
         <span><?php echo xlt('Match case'); ?></span>
@@ -666,7 +681,7 @@ foreach ($ar as $key => $val) {
                    " from immunizations i1 ".
                    " left join code_types ct on ct.ct_key = 'CVX' ".
                    " left join codes c on c.code_type = ct.ct_id AND i1.cvx_code = c.code ".
-                   " where i1.patient_id = '$pid' ".
+                   " where i1.patient_id = '$pid' and i1.added_erroneously = 0 ".
                    " order by administered_date desc";
                 $result = sqlStatement($sql);
                 while ($row=sqlFetchArray($result)) {
@@ -759,17 +774,23 @@ foreach ($ar as $key => $val) {
                 if($couch_docid && $couch_revid){
                   $url_file = $d->get_couch_url($pid,$encounter);
                 }
-                // just grab the last two levels, which contain filename and patientid
+                // Collect filename and path
                 $from_all = explode("/",$url_file);
                 $from_filename = array_pop($from_all);
-                $from_patientid = array_pop($from_all);
+                $from_pathname_array = array();
+                for ($i=0;$i<$d->get_path_depth();$i++) {
+                  $from_pathname_array[] = array_pop($from_all);
+                }
+                $from_pathname_array = array_reverse($from_pathname_array);
+                $from_pathname = implode("/",$from_pathname_array);
+
                 if($couch_docid && $couch_revid) {
                   $from_file = $GLOBALS['OE_SITE_DIR'] . '/documents/temp/' . $from_filename;
                   $to_file = substr($from_file, 0, strrpos($from_file, '.')) . '_converted.jpg';
                 }
                 else {
                   $from_file = $GLOBALS["fileroot"] . "/sites/" . $_SESSION['site_id'] .
-                    '/documents/' . $from_patientid . '/' . $from_filename;
+                    '/documents/' . $from_pathname . '/' . $from_filename;
                   $to_file = substr($from_file, 0, strrpos($from_file, '.')) . '_converted.jpg';
                 }
 

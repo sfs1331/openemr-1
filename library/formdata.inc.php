@@ -116,13 +116,22 @@ function escape_sql_column_name($s,$tables,$long=FALSE) {
 }
 
 /**
- * Escape/sanitize a table name for a sql query..
+ * Escape/sanitize a table name for a sql query. This function can also can be used to
+ * process tables that contain any upper case letters.
  *
  * This will escape/sanitize the table name for a sql query. It is done by whitelisting
- * all of the current tables in the openemr database. Note that if there is no match, then
- * it will die() and a error message will be sent to the screen and the error log. This
- * function should not be used for escaping tables outside the openemr database (should
- * use escape_identifier() function below for that scenario)
+ * all of the current tables in the openemr database. The matching is not case sensitive,
+ * although it will attempt a case sensitive match before proceeding to a case insensitive
+ * match (see below escape_identifier() function for more details on this). Note that if
+ * there is no match, then it will die() and a error message will be sent to the screen
+ * and the error log. This function should not be used for escaping tables outside the
+ * openemr database (should use escape_identifier() function below for that scenario).
+ * Another use of this function is to deal with casing issues that arise in tables that
+ * contain upper case letter(s) (these tables can be huge issues when transferring databases
+ * from Windows to Linux and vice versa); this function can avoid this issues if run the
+ * table name through this function (To avoid confusion, there is a wrapper function
+ * entitled mitigateSqlTableUpperCase() that is used when just need to mitigate casing
+ * for table names that contain any uppercase letters).
  *
  * @param   string $s  sql table name variable to be escaped/sanitized.
  * @return  string     Escaped table name variable.
@@ -136,7 +145,19 @@ function escape_table_name($s) {
       }
 
       // Now can escape(via whitelisting) the sql table name
-      return escape_identifier($s,$tables_array,TRUE);
+      return escape_identifier($s,$tables_array,TRUE,FALSE);
+}
+
+/**
+ * Process tables that contain any upper case letters; this is simple a wrapper function of
+ * escape_table_name() above when using it for the sole purpose of mitigating sql table names
+ * that contain upper case letters.
+ *
+ * @param   string $s  sql table name variable to be escaped/sanitized.
+ * @return  string     Escaped table name variable.
+ */
+function mitigateSqlTableUpperCase($s) {
+    return escape_table_name($s);
 }
 
 /**
@@ -148,7 +169,9 @@ function escape_table_name($s) {
  * only certain identifiers (listed in the $whitelist_items array) can be used; if
  * there is no match, then it will either default to the first item in the $whitelist_items
  * (if $die_if_no_match is FALSE) or it will die() and send an error message to the screen
- * and log (if $die_if_no_match is TRUE).
+ * and log (if $die_if_no_match is TRUE). Note there is an option to allow case insensitive
+ * matching; if this option is chosen, it will first attempt a case sensitive match and if this
+ * fails, then attempt a case insensitive match.
  * The second option is done by sanitizing ($whitelist_items is not used) and in this case
  * only US alphanumeric,'_' and '.' items are kept in the returned string. Note
  * the second option is still experimental as we figure out the ideal items to
@@ -158,19 +181,35 @@ function escape_table_name($s) {
  * @param   string   $s                Sql identifier variable to be escaped/sanitized.
  * @param   array    $whitelist_items  Items used in whitelisting method (See function description for details of whitelisting method).
  * @param   boolean  $die_if_no_match  If there is no match in the whitelist, then die and echo an error to screen and log.
+ * @param   boolean  $case_sens_match  Use case sensitive match (this is default).
  * @return  string                     Escaped/sanitized sql identifier variable.
  */
-function escape_identifier($s,$whitelist_items,$die_if_no_match=FALSE) {
+function escape_identifier($s,$whitelist_items,$die_if_no_match=FALSE,$case_sens_match=TRUE) {
       if (is_array($whitelist_items)) {
             // Only return an item within the whitelist_items
-            if ( $die_if_no_match && !(in_array($s,$whitelist_items)) ) {
-                  // There is no match in the whitelist and the $die_if_no_match flag is set
-                  // so die() and send error messages to screen and log
-                  error_Log("ERROR: OpenEMR SQL Escaping ERROR of the following string: ".$s,0);
-                  die("<br><span style='color:red;font-weight:bold;'>".xlt("There was an OpenEMR SQL Escaping ERROR of the following string")." ".text($s)."</span><br>");
-            }
             $ok = $whitelist_items;
+            // First, search for case sensitive match
             $key = array_search($s,$ok);
+            if ($key === FALSE) {
+                // No match
+                if (!$case_sens_match) {
+                    // Attempt a case insensitive match
+                    $ok_UPPER = array_map("strtoupper",$ok);
+                    $key = array_search(strtoupper($s),$ok_UPPER);
+                }
+                if ($key === FALSE) {
+                    // Still no match
+                    if ($die_if_no_match) {
+                        // No match and $die_if_no_match is set, so die() and send error messages to screen and log
+                        error_Log("ERROR: OpenEMR SQL Escaping ERROR of the following string: ".$s,0);
+                        die("<br><span style='color:red;font-weight:bold;'>".xlt("There was an OpenEMR SQL Escaping ERROR of the following string")." ".text($s)."</span><br>");
+                    }
+                    else {
+                        // Return first token since no match
+                        $key = 0; 
+                    }
+                }
+            }
             return $ok[$key];
       }
       else {
